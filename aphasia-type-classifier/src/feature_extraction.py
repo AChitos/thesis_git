@@ -7,7 +7,7 @@ import pandas as pd
 import joblib
 
 # Load the vectorizer used during training
-vectorizer = joblib.load('/Users/andreaschitos1/Desktop/bachelor_project/wernicke_broca/aphasia-type-classifier/src/vectorizer.pkl')
+vectorizer = joblib.load('/Users/andreaschitos1/Desktop/thesis_git/aphasia-type-classifier/src/vectorizer.pkl')
 
 def extract_features(transcripts):
     """

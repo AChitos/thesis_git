@@ -52,19 +52,48 @@ def load_and_preprocess_file(filepath: str) -> List[str]:
     # Add the label as the first line in the processed output
     return [label] + processed_lines
 
-data_folder = "/Users/andreaschitos1/Desktop/bachelor_project/wernicke_broca/aphasia-type-classifier/data/"
+# Update this path to point to your actual data location
+data_folder = "/Users/andreaschitos1/Desktop/thesis_git/aphasia-type-classifier/data/"
 processed_folder = os.path.join(data_folder, "processed")
 
 # Create the 'processed' folder if it doesn't exist
 os.makedirs(processed_folder, exist_ok=True)
 
-# Save the processed file in the 'processed' folder
-for file in os.listdir(data_folder):
-    if file.endswith(".cha"):
-        file_path = os.path.join(data_folder, file)
-        processed_lines = load_and_preprocess_file(file_path)
-        
-        processed_file_path = os.path.join(processed_folder, f"processed_{file}")
-        with open(processed_file_path, "w", encoding="utf-8") as out_file:
-            out_file.write("\n".join(processed_lines))
-        print(f"Saved processed file: {processed_file_path}")
+# Counter for processed files
+processed_count = 0
+skipped_count = 0
+
+# Walk through all directories and subdirectories
+for root, dirs, files in os.walk(data_folder):
+    for file in files:
+        # Case-insensitive check for .cha extension
+        if file.lower().endswith(".cha"):
+            # Get relative path from data_folder to maintain structure
+            rel_path = os.path.relpath(root, data_folder)
+            
+            # Skip if we're already in the processed folder
+            if "processed" in rel_path:
+                continue
+                
+            file_path = os.path.join(root, file)
+            
+            try:
+                processed_lines = load_and_preprocess_file(file_path)
+                
+                # Create subdirectory structure in processed folder if needed
+                if rel_path != ".":
+                    target_dir = os.path.join(processed_folder, rel_path)
+                    os.makedirs(target_dir, exist_ok=True)
+                    processed_file_path = os.path.join(target_dir, f"processed_{file}")
+                else:
+                    processed_file_path = os.path.join(processed_folder, f"processed_{file}")
+                
+                with open(processed_file_path, "w", encoding="utf-8") as out_file:
+                    out_file.write("\n".join(processed_lines))
+                print(f"Saved processed file: {processed_file_path}")
+                processed_count += 1
+            except Exception as e:
+                print(f"Error processing {file_path}: {str(e)}")
+                skipped_count += 1
+
+print(f"Processing complete. Processed {processed_count} files. Skipped {skipped_count} files.")

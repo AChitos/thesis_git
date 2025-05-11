@@ -5,7 +5,7 @@ from src.feature_extraction import extract_features
 from src.model import load_model
 
 # Load the trained model
-model = load_model('/Users/andreaschitos1/Desktop/bachelor_project/wernicke_broca/aphasia-type-classifier/src/aphasia_model.h5')
+model = load_model('/Users/andreaschitos1/Desktop/thesis_git/aphasia-type-classifier/src/aphasia_model.h5')
 
 st.title("Aphasia Type Classifier")
 

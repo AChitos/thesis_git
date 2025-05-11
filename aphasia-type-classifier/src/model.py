@@ -134,7 +134,7 @@ def load_model(filepath):
 if __name__ == "__main__":
 
     # Paths
-    processed_data_folder = "/Users/andreaschitos1/Desktop/bachelor_project/wernicke_broca/aphasia-type-classifier/data/processed/"
+    processed_data_folder = "/Users/andreaschitos1/Desktop/thesis_git/aphasia-type-classifier/data/processed/"
     model_save_path = "aphasia_model.h5"
 
     # Load preprocessed data
@@ -160,7 +160,7 @@ if __name__ == "__main__":
     labels = df["label"]
 
     # Save the vectorizer
-    joblib.dump(vectorizer, '/Users/andreaschitos1/Desktop/bachelor_project/wernicke_broca/aphasia-type-classifier/src/vectorizer.pkl')
+    joblib.dump(vectorizer, '/Users/andreaschitos1/Desktop/thesis_git/aphasia-type-classifier/src/vectorizer.pkl')
 
     # Train the neural network
     class_names = labels.unique()
