@@ -1,6 +1,6 @@
 ,accuracy,precision,recall,f1_score,prediction_time,training_time
-Logistic Regression,1.0,1.0,1.0,1.0,0.0002,0.0025
-SVM,0.9091,0.9242,0.9091,0.9091,0.0024,0.0102
-Random Forest,1.0,1.0,1.0,1.0,0.0042,0.0781
-Naive Bayes,1.0,1.0,1.0,1.0,0.0006,0.0046
-Neural Network,0.8182,0.8182,0.8182,0.8182,0.0384,3.4786
+Logistic Regression,1.0,1.0,1.0,1.0,0.0078,0.0042
+SVM,0.9091,0.9242,0.9091,0.9091,0.0031,0.0171
+Random Forest,1.0,1.0,1.0,1.0,0.0034,0.0895
+Naive Bayes,1.0,1.0,1.0,1.0,0.0005,0.0044
+Neural Network,0.9091,0.9242,0.9091,0.9091,0.0351,3.4481
