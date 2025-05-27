@@ -3,12 +3,12 @@ from setuptools import setup, find_packages
 setup(
     name='aphasia-type-classifier',
     version='0.1.0',
-    author='Your Name',
-    author_email='your.email@example.com',
+    author='Andreas Chitos',
+    author_email='a.chitos@student.rug.nl',
     description='A classifier for identifying types of aphasia in Greek-speaking patients based on linguistic features.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
-    url='https://github.com/yourusername/aphasia-type-classifier',
+    url='https://github.com/AChitos/aphasia-type-classifier',
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     install_requires=[
