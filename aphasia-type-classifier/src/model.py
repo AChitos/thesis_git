@@ -222,7 +222,7 @@ def train_neural_network(features, labels, class_names):
     # Early stopping callback
     early_stopping = EarlyStopping(
         monitor='val_loss',
-        patience=3,  # Stop training after 5 epochs with no improvement
+        patience=3,  # Stop training after 3 epochs with no improvement
         restore_best_weights=True
     )
 
@@ -310,6 +310,159 @@ def load_model(filepath):
     """
     return keras_load_model(filepath)
 
+def train_without_smote(X_train, y_train, X_test, y_test, class_names):
+    """Train models without SMOTE for comparison."""
+    print("\nTraining models without SMOTE...")
+    
+    # Skip SMOTE, use original imbalanced data
+    # Compare results
+    models = {}
+    metrics = {}
+
+    # Logistic Regression
+    lr_model = LogisticRegression(max_iter=1000, random_state=42, class_weight='balanced', solver='liblinear')
+    lr_model.fit(X_train, y_train)
+    models['Logistic Regression'] = lr_model
+    metrics['Logistic Regression'] = evaluate_classifier(lr_model, X_test, y_test, "Logistic Regression", class_names)
+
+    # SVM
+    svm_model = SVC(kernel='rbf', random_state=42, class_weight='balanced', gamma='scale')
+    svm_model.fit(X_train, y_train)
+    models['SVM'] = svm_model
+    metrics['SVM'] = evaluate_classifier(svm_model, X_test, y_test, "Support Vector Machine", class_names)
+
+    # Random Forest
+    rf_model = RandomForestClassifier(n_estimators=100, random_state=42, class_weight='balanced', max_depth=10, min_samples_split=5, min_samples_leaf=2)
+    rf_model.fit(X_train, y_train)
+    models['Random Forest'] = rf_model
+    metrics['Random Forest'] = evaluate_classifier(rf_model, X_test, y_test, "Random Forest", class_names)
+
+    # Naive Bayes
+    nb_model = MultinomialNB(alpha=1.0)
+    nb_model.fit(X_train, y_train)
+    models['Naive Bayes'] = nb_model
+    metrics['Naive Bayes'] = evaluate_classifier(nb_model, X_test, y_test, "Multinomial Naive Bayes", class_names)
+
+    return models, metrics
+
+def train_neural_network_without_smote(features, labels, class_names):
+    """
+    Train a neural network WITHOUT SMOTE for comparison.
+
+    Parameters:
+    - features: Sparse matrix of feature vectors.
+    - labels: Array of labels.
+    - class_names: List of class names.
+
+    Returns:
+    - model: Trained neural network model.
+    - metrics: Dictionary of evaluation metrics.
+    """
+    print("\nTraining Neural Network WITHOUT SMOTE...")
+    
+    start_time = time.time()
+    
+    # Convert sparse matrix to dense
+    features = features.toarray()
+
+    # Encode labels as integers
+    label_map = {name: idx for idx, name in enumerate(class_names)}
+    labels = labels.map(label_map).values
+    labels = to_categorical(labels, num_classes=len(class_names))
+
+    # NO SMOTE - use original imbalanced data
+    X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.2, random_state=42)
+
+    # Compute class weights to handle imbalance
+    class_weights = compute_class_weight(
+        'balanced',
+        classes=np.array(list(label_map.values())),
+        y=labels.argmax(axis=1)
+    )
+    class_weights = {i: weight for i, weight in enumerate(class_weights)}
+
+    # Build the neural network (same architecture)
+    model = Sequential([
+        Dense(256, activation='relu', input_shape=(X_train.shape[1],)),
+        BatchNormalization(),
+        Dropout(0.4),
+        Dense(128, activation='relu'),
+        BatchNormalization(),
+        Dropout(0.3),
+        Dense(64, activation='relu'),
+        Dropout(0.3),
+        Dense(len(class_names), activation='softmax')
+    ])
+
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+    # Same callbacks
+    early_stopping = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
+    lr_scheduler = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=3, min_lr=1e-6)
+
+    # Train the model
+    print("Training the model WITHOUT SMOTE...")
+    history = model.fit(
+        X_train, y_train,
+        validation_data=(X_test, y_test),
+        epochs=50,
+        batch_size=32,
+        class_weight=class_weights,  # Still use class weights
+        callbacks=[early_stopping, lr_scheduler],
+        verbose=1
+    )
+    
+    training_time = time.time() - start_time
+
+    # Evaluate the model
+    print(f"\nTraining Time: {training_time:.4f} seconds")
+    print(f"\n{'='*60}")
+    print(f"EVALUATING NEURAL NETWORK WITHOUT SMOTE")
+    print(f"{'='*60}")
+    
+    start_pred_time = time.time()
+    loss, accuracy = model.evaluate(X_test, y_test, verbose=0)
+    prediction_time = time.time() - start_pred_time
+    
+    print(f"Prediction Time: {prediction_time:.4f} seconds")
+    print(f"Test Loss: {loss:.4f}")
+    print(f"Test Accuracy: {accuracy:.4f}")
+
+    # Additional metrics
+    y_pred = model.predict(X_test).argmax(axis=1)
+    y_true = y_test.argmax(axis=1)
+    
+    precision = precision_score(y_true, y_pred, average='weighted', zero_division=0)
+    recall = recall_score(y_true, y_pred, average='weighted', zero_division=0)
+    f1 = f1_score(y_true, y_pred, average='weighted', zero_division=0)
+    
+    print(f"Precision: {precision:.4f}")
+    print(f"Recall: {recall:.4f}")
+    print(f"F1 Score: {f1:.4f}")
+    
+    print("\nDetailed Classification Report:")
+    print(classification_report(y_true, y_pred, target_names=class_names, zero_division=0))
+
+    # Plot confusion matrix
+    cm = confusion_matrix(y_true, y_pred)
+    plt.figure(figsize=(8, 6))
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_names)
+    disp.plot(cmap='Reds')  # Different color for comparison
+    plt.title('Confusion Matrix - Neural Network (No SMOTE)')
+    plt.show()
+    
+    metrics = {
+        'accuracy': accuracy,
+        'precision': precision,
+        'recall': recall,
+        'f1_score': f1,
+        'training_time': training_time,
+        'prediction_time': prediction_time
+    }
+
+    return model, history, metrics
+
+# Add this to your main execution section after the original neural network training:
 if __name__ == "__main__":
     print("="*80)
     print("APHASIA TYPE CLASSIFICATION - COMPARATIVE ANALYSIS")
@@ -401,12 +554,16 @@ if __name__ == "__main__":
     all_results['Naive Bayes'] = nb_metrics
     joblib.dump(nb_model, 'naive_bayes_model.pkl')
 
-    # 5. Neural Network
+    # 5. Neural Network (with SMOTE)
     nn_model, history, nn_metrics = train_neural_network(features, labels, class_names)
-    all_results['Neural Network'] = nn_metrics
+    all_results['Neural Network (SMOTE)'] = nn_metrics
     nn_model.save(model_save_path)
-    print(f"Neural Network model saved to {model_save_path}")
-
+    
+    # 6. Neural Network (without SMOTE) - NEW COMPARISON
+    nn_no_smote_model, history_no_smote, nn_no_smote_metrics = train_neural_network_without_smote(features, labels, class_names)
+    all_results['Neural Network (No SMOTE)'] = nn_no_smote_metrics
+    nn_no_smote_model.save('aphasia_model_no_smote.h5')
+    
     # Display comparative results
     print("\n" + "="*80)
     print("COMPARATIVE RESULTS SUMMARY")
